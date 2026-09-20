@@ -64,8 +64,13 @@ async function handleSubscribe(request, env) {
     return jsonResponse({ ok: true });
   }
 
+  // TEMPORARY: surface Brevo's actual error for debugging. Remove once fixed.
   return jsonResponse(
-    { ok: false, error: 'Something went wrong. Please try again.' },
+    {
+      ok: false,
+      error: 'Something went wrong. Please try again.',
+      debug: { status: brevoResponse.status, brevo: errorBody },
+    },
     502
   );
 }
