@@ -1,12 +1,23 @@
-// Cloudflare Pages Function — handles newsletter signups by forwarding
-// the submitted email to Brevo's Contacts API.
+// Custom Worker entry point for the Healthy House Pets static site.
+// Handles the /subscribe route (newsletter signup -> Brevo) and falls
+// through to serving the static site for everything else.
 //
-// Requires an environment variable BREVO_API_KEY to be set in the
-// Cloudflare Pages project (Settings -> Environment variables -> Encrypted).
+// Requires an environment variable/secret BREVO_API_KEY.
 
-export async function onRequestPost(context) {
-  const { request, env } = context;
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
 
+    if (url.pathname === '/subscribe' && request.method === 'POST') {
+      return handleSubscribe(request, env);
+    }
+
+    // Everything else: serve the static site as-is.
+    return env.ASSETS.fetch(request);
+  },
+};
+
+async function handleSubscribe(request, env) {
   let email;
   try {
     const contentType = request.headers.get('content-type') || '';
@@ -47,8 +58,6 @@ export async function onRequestPost(context) {
     return jsonResponse({ ok: true });
   }
 
-  // Brevo returns 400 with code "duplicate_parameter" if already subscribed —
-  // treat that as a success from the visitor's point of view.
   const errorBody = await brevoResponse.json().catch(() => ({}));
   if (errorBody.code === 'duplicate_parameter') {
     return jsonResponse({ ok: true });
