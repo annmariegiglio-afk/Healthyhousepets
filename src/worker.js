@@ -3,6 +3,7 @@
 // through to serving the static site for everything else.
 //
 // Requires an environment variable/secret BREVO_API_KEY.
+// (redeploy trigger)
 
 export default {
   async fetch(request, env) {
