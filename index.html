@@ -260,6 +260,14 @@
     transition: background 0.15s ease;
   }
   .signup-form button:hover { background: var(--ochre-deep); color: var(--cream); }
+  .signup-form button:disabled { opacity: 0.6; cursor: default; }
+  .newsletter-message {
+    margin: 10px 0 0;
+    font-size: 14px;
+    min-height: 18px;
+    color: rgba(246, 241, 230, 0.9);
+  }
+  .newsletter-message.is-error { color: #E8B4B0; }
 
   /* ---------- Footer ---------- */
   footer {
@@ -468,10 +476,11 @@
       <h2>One email a week, zero fluff</h2>
       <p>New guides, product tests, and apartment-pet tips &mdash; no spam, unsubscribe anytime.</p>
     </div>
-    <form class="signup-form" onsubmit="return false;">
-      <input type="email" placeholder="you@email.com" required>
-      <button type="submit">Sign up</button>
+    <form class="signup-form" id="newsletter-form">
+      <input type="email" name="email" id="newsletter-email" placeholder="you@email.com" required>
+      <button type="submit" id="newsletter-submit">Sign up</button>
     </form>
+    <p id="newsletter-message" class="newsletter-message" role="status" aria-live="polite"></p>
   </div>
 </section>
 
@@ -486,5 +495,45 @@
   </div>
 </footer>
 
+<script>
+  (function () {
+    var form = document.getElementById('newsletter-form');
+    var button = document.getElementById('newsletter-submit');
+    var input = document.getElementById('newsletter-email');
+    var message = document.getElementById('newsletter-message');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      message.textContent = '';
+      message.classList.remove('is-error');
+      button.disabled = true;
+      button.textContent = 'Signing up…';
+
+      fetch('/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: input.value }),
+      })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (result.data && result.data.ok) {
+            message.textContent = "You're in — check your inbox.";
+            form.reset();
+          } else {
+            message.textContent = (result.data && result.data.error) || 'Something went wrong. Please try again.';
+            message.classList.add('is-error');
+          }
+        })
+        .catch(function () {
+          message.textContent = 'Something went wrong. Please try again.';
+          message.classList.add('is-error');
+        })
+        .finally(function () {
+          button.disabled = false;
+          button.textContent = 'Sign up';
+        });
+    });
+  })();
+</script>
 </body>
 </html>
