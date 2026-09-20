@@ -41,10 +41,19 @@ async function handleSubscribe(request, env) {
     return jsonResponse({ ok: false, error: 'Server is not configured yet.' }, 500);
   }
 
+  // BREVO_API_KEY is bound via Cloudflare Secrets Store, which exposes an
+  // object with an async get() method rather than a plain string.
+  let apiKey;
+  try {
+    apiKey = await env.BREVO_API_KEY.get();
+  } catch (err) {
+    return jsonResponse({ ok: false, error: 'Could not read the API key.', debug: String(err) }, 500);
+  }
+
   const brevoResponse = await fetch('https://api.brevo.com/v3/contacts', {
     method: 'POST',
     headers: {
-      'api-key': env.BREVO_API_KEY,
+      'api-key': apiKey,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
